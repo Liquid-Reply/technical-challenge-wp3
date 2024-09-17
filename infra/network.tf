@@ -52,7 +52,7 @@ resource "azurerm_subnet_nat_gateway_association" "main" {
 
 resource "azurerm_public_ip" "keycloak" {
   for_each = toset(local.zones)
-  name     = "nat-${each.key}"
+  name     = "keycloak-${each.key}"
 
   allocation_method   = "Static"
   location            = local.location
