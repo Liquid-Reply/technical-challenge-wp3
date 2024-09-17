@@ -11,7 +11,7 @@ resource "azurerm_subnet" "keycloak" {
 
   name = "keycloak-${each.key}"
 
-  address_prefixes     = [cidrsubnet(local.address_space, 8, 1 - tonumber(each.key))]
+  address_prefixes     = [cidrsubnet(local.address_space, 8, tonumber(each.key))]
   resource_group_name  = local.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
 
