@@ -6,6 +6,14 @@ output "kubernetes_cluster_name" {
   value = azurerm_kubernetes_cluster.k8s.name
 }
 
+output "ssh_public_key" {
+  value = azapi_resource_action.ssh_public_key_gen.output.publicKey
+}
+
+output "ssh_private_key" {
+  value = azapi_resource_action.ssh_public_key_gen.output.privateKey
+}
+
 output "client_certificate" {
   value     = azurerm_kubernetes_cluster.k8s.kube_config[0].client_certificate
   sensitive = true
