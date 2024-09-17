@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "main" {
-  name = "tech-challenge"
+  name     = "tech-challenge"
   location = local.location
 }
 
@@ -17,7 +17,8 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   name                = random_pet.azurerm_kubernetes_cluster_name.id
   resource_group_name = azurerm_resource_group.main.name
   dns_prefix          = random_pet.azurerm_kubernetes_cluster_dns_prefix.id
-  kubernetes_version    = var.kubernetes_version
+  kubernetes_version  = "1.30"
+
   identity {
     type = "SystemAssigned"
   }
@@ -25,10 +26,12 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   default_node_pool {
     name       = "agentpool"
     vm_size    = "Standard_D8s_v5"
-    node_count = var.node_count
+    node_count = 3
+    zones      = local.zones
   }
+  
   linux_profile {
-    admin_username = var.username
+    admin_username = local.admin_username
 
     ssh_key {
       key_data = azapi_resource_action.ssh_public_key_gen.output.publicKey
