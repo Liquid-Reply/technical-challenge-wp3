@@ -1,0 +1,9 @@
+replicaCount: 3
+postgresql:
+  enabled: false
+externalDatabase:
+  host: myexternalhost
+  user: myuser
+  password: mypassword
+  database: mydatabase
+  port: 5432
