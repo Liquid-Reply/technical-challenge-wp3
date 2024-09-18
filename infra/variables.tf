@@ -21,3 +21,11 @@ variable "msi_id" {
   description = "The Managed Service Identity ID. Set this value if you're running this example using Managed Identity as the authentication method."
   default     = null
 }
+
+variable "tenant_id" {
+  type = string
+}
+
+variable "subscription_id" {
+  type = string
+}

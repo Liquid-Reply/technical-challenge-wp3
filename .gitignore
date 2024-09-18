@@ -23,7 +23,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-azurek8s
+infra/azurek8s
 
 # Ignore transient lock info files created by terraform apply
 .terraform.tfstate.lock.info

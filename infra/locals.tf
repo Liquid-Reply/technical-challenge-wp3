@@ -6,4 +6,8 @@ locals {
   zones = ["1", "2", "3"]
 
   admin_username = "adminuser"
+  postgres_zone = "1"
+  postgres_standby_availability_zone = "2"
+  postgres_backup_retention_days = "8"
+  postgres_geo_redundant_backup_enabled = true
 }
