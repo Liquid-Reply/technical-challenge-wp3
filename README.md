@@ -11,7 +11,9 @@ Access to Keycloak is facilitated via a load balancer.
 Azure Database for PostgreSQL is used as external database for Keycloak.
 
 ### Further architecture improvements
-For a production grade setup at least the following aspects have to be considered and implemented form an infrastructure point of view:
+
+>[!IMPORTANT]
+>For a production grade setup at least the following aspects have to be considered and implemented form an infrastructure point of view:
 * Do not use default virtual network and subnets.
 * Ensure traffic is private and use e.g. a bastion host to connect to the network.
 * Use Azure NAT Gateway for internet access (ipv4).
