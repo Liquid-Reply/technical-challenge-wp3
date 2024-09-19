@@ -14,12 +14,11 @@ Azure Database for PostgreSQL Flexible Server is used as external database for K
 
 Azure DNS is used to resolve hostnames.
 
-Keycloak?
-
 ### Further architecture improvements
 
 >[!IMPORTANT]
 >For a production grade setup at least the following aspects have to be considered and implemented from an infrastructure point of view:
+
 * Do not use default virtual network and subnets.
 * Ensure traffic is private and use e.g. a bastion host to connect to the network.
 * Use Azure NAT Gateway for internet access (ipv4).
@@ -40,19 +39,21 @@ The infrastructure components are provisioned via Terraform with its state saved
 
 After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
-Todo: keyvault + DB password
+TODO: keyvault + DB password
 
 ### Kubernetes initialization
 Install helm; run script
 
 ### Keycloak installation
-todo: describe helm deployment
+TODO: describe helm deployment
 
 ### Service integration
-todo: describe how to enable a service to be used with keycloak
+TODO: describe how to enable a service to be used with keycloak
 
 ## Operations
+
 ### Maintenance
+
 #### Connect to cluster
 Prerequisites:
 * Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled or e.g. a bastion host if the cluster is private. To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
@@ -65,33 +66,38 @@ To connect run the following commands (you can also find them in the Azure Porta
 5. Now you can use commands like `kubectl get nodes` to interact with the Kubernetes cluster.
 
 #### Backup & Restore
-wip/todo
+TODO:
 
 Application: helm
 
 DB: TF resources
 
 #### Scaling
-wip/todo
+Depending on the load on the system different parts can be scaled. Check the following.
 
-Kubernetes;
-DB;
-Keycloak
+##### Kubernetes
+Either the number of nodes or the instance type can be scaled in [/infra/main.tf](./infra/main.tf). To scale the number of nodes in a node pool adjust the `node_count` property. The instance type can be changed with the `vm_size` property.
+
+##### Database
+Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_tier` parameters in [/infra/database.tf](./infra/database.tf).
+
+##### Keycloak
+To increase the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
 #### Change configuration
-wip/todo
+To change configuration parameters of Keycloak adjust the corresponding values in TODO: and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
 
 Helm
 
 #### Update version
-wip/todo
+TODO:
 
 Helm
 
 Lifecycle management, downtimes
 
 #### Add/remove users/realms etc
-wip/todo
+TODO:
 
 Not sure if we need this but either via direct UI import or via API calls (could be automated with custom script and TF). 
 
@@ -101,8 +107,6 @@ Not sure if we need this but either via direct UI import or via API calls (could
 >To use the following kubectl commands prerequisite is that you are able to connect to the cluster (see [here](#connect-to-cluster)).
 >
 >In the kubectl commands you can also use `get -o yaml` instead of `describe` to get the configuration details of the individual Kubernetes resources.
-
-
 
 #### Check application logs
 You can directly access Keycloak application logs from Kubernetes. 
