@@ -108,19 +108,25 @@ Either the number of nodes or the instance type can be scaled in [/infra/main.tf
 Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_tier` parameters in [/infra/database.tf](./infra/database.tf).
 
 ##### Keycloak
+Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
+
 To increase the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
 #### Change configuration
+Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
+
 To change configuration parameters of Keycloak adjust the corresponding values in TODO: and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
 
 Helm
 
 #### Update version
+Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
+
 TODO:
 
 Helm
 
-Lifecycle management, downtimes
+Lifecycle management, downtimes???
 
 #### Add/remove users/realms etc
 TODO:
