@@ -8,7 +8,7 @@
 The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be deployed in a high availability setup.
 Access to Keycloak is facilitated via a load balancer.
 
-Azure Database for PostgreSQL is used as external database for Keycloak.
+Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak.
 
 ### Further architecture improvements
 
@@ -23,8 +23,8 @@ Azure Database for PostgreSQL is used as external database for Keycloak.
 * Use AKS system/agent node pool only for critical workload. Use dedicated user node pools for further workload. Node pools should be deployed to all availability zones.
 * Use e.g. Kubernetes RBAC with Azure RBAC integration to manage cluster access.
 * Automate the deployment of infrastructure and workload to ensure consistency (use e.g. GitOps approach).
-* Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL.
-* Consider deploying Azure Database for PostgreSQL in `ZoneRedundant` mode and add read replicas which can be promoted in case of failures.
+* Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL Flexible Server.
+* Consider deploying Azure Database for PostgreSQL Flexible Server in `ZoneRedundant` mode and add read replicas which can be promoted in case of failures.
 * Use Azure Public and/or Private DNS zones.
 * Consider using a web application firewall (either within Kubernetes or as part of the loadbalancer).
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute and storage resources.
