@@ -1,0 +1,30 @@
+
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: keycloak-issuer
+  namespace: keycloak-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: private-key
+    solvers:
+    - http01:
+        ingress:
+          ingressClassName: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak
+  namespace: keycloak-system
+spec:
+  secretName: keycloak-tls
+  dnsNames:
+  - 'host.keycloak.full-coral.cc'
+  - 'api.keycloak.full-coral.cc'
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: keycloak-issuer
