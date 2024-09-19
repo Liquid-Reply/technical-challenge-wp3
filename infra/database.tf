@@ -8,7 +8,7 @@ resource "random_pet" "postgresql_server_name_random_suffix" {
 }
 
 resource "azurerm_postgresql_flexible_server" "keycloak" {
-  resource_group_name = local.resource_group_name
+  resource_group_name = azurerm_resource_group.main.name
   name = "keycloak-postgres-${random_pet.postgresql_server_name_random_suffix.id}"
   location = local.location
 
