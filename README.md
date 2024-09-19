@@ -6,12 +6,15 @@
 
 ![Keycloak Architecture](./assets/Architecture.png)
 
-The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup.
+The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup. In this case three instances of Keycloak are deployed across three nodes, sharing the same external database.
+
 Access to Keycloak is facilitated via a load balancer.
 
 Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak.
 
 Azure DNS is used to resolve hostnames.
+
+Keycloak?
 
 ### Further architecture improvements
 
@@ -31,13 +34,25 @@ Azure DNS is used to resolve hostnames.
 * Consider using a web application firewall (either within Kubernetes or as part of the loadbalancer).
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute, storage and application resources.
 
+## Deployment
+### Infrastructure provisioning
+The infrastructure components are provisioned via Terraform with its state saved in Azure Blob Storage. To provision the initial infrastructure needed for the terraform backend one can run `sh ./infra/script/create-tf-backend.sh` from the root of the git repository. It is required to have Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and to be logged in (`az login`).
+
+After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
+
+Todo: keyvault + DB password
+
+### Kubernetes initialization
+Install helm; run script
+
+### Keycloak installation
+todo: describe helm deployment
+
+### Service integration
+todo: describe how to enable a service to be used with keycloak
+
 ## Operations
 ### Maintenance
-#### Deployment
-wip/todo
-
-Helm
-
 #### Connect to cluster
 Prerequisites:
 * Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled or e.g. a bastion host if the cluster is private. To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
@@ -72,6 +87,8 @@ Helm
 wip/todo
 
 Helm
+
+Lifecycle management, downtimes
 
 #### Add/remove users/realms etc
 wip/todo
@@ -130,12 +147,33 @@ You can use the output to search for errors.
 Use a monitoring system or the Azure Portal to check if the database used by Keycloak is healthy. Take a look at the server metrics (e.g. failed connections, alive status) and if the database used by Keycloak exists.
 
 ### Monitoring
+![Observability](./assets/observability.png)
+
+A proper monitoring solution includes an observability tool that consumes different signals like logs, metrics and traces from the whole system landscape (infrastructure and applications). This data needs to be visualized to quickly understand it and an alerting system needs to established which notifies incident response tools and notifies teams. 
+
 #### Logs
+The observability system should collect logs from Kubernetes workload including Keycloak and the utility services. To not consume too many logs (and therefore generate noise and unwanted costs) it is sufficient to focus on logs with a log level of warning and above. This is usually supported by log collectors. For access logs from the ingress controller this needs to be evaluated if `info` logs should also be consumed. 
+
+Besides logs from Kubernetes it is also important to check infrastructure component logs e.g. from Azure Database for PostgreSQL Flexible Server and other system that might produce logs.
+
+Audit logs should also be consumed to track potential unwanted configuration changes or access.
+
 #### Metrics
+Metrics from infrastructure and application resources should be monitored and proper alerting established. At least these metrics should be covered:
+
+* CPU
+* Memory
+* Disk pressure
+* DB connections
+* DB latency
+* Storage consumption
+* Kubernetes Pod status
+* Kuberentes Pod restarts
+* Kubernetes Node status
+* Keycloak usage metrics (e.g. login errors, registrations)
+
 #### Traces
-Is Keycloak exposing metrics?
+To get an end-to-end view on system performance a tracing solution should be established. This helps to quickly identify bottlenecks and points of failure. This can also help in scaling and right-sizing decisions.
 
-
-Notes:
-
-keycloak prod guide: https://www.keycloak.org/server/configuration-production
+#### Alerting
+Based on the logs, metrics and tracing data a proper alerting should be established that allows for quick discovery of unexpected behavior. Depending on the priority of alerts incidents can be triggered in downstream tools like PagerDuty and/or communicated to responsible teams via Teams, Slack or alike.
