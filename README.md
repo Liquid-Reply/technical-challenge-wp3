@@ -66,11 +66,37 @@ To connect run the following commands (you can also find them in the Azure Porta
 5. Now you can use commands like `kubectl get nodes` to interact with the Kubernetes cluster.
 
 #### Backup & Restore
-TODO:
+**Kubernetes resources**  
+All kubernetes manifests are stored in Git and deployed in a GitOps manner using **INSERT CICD TOOL HERE** and are automatically reconciled when there is a drift. This automatic reconciliation has to be disable before any maintenance task is performed to prevent data loss or data corruption.
 
-Application: helm
+**TODO: Add part about disabling reconciliation loop on CICD tool**
 
-DB: TF resources
+Keycloak can be scaled up/down (equivalent of starting/stopping keycloak) using kubectl as follows
+
+```shell
+# Stop the Keycloak instances
+kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":0}]'
+
+# Perform maintenance tasks
+
+# Start the Keycloak instances
+kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":3}]'
+```
+
+**Azure resources**
+
+The database is the most crucial resource for Keycloak in a Kubernetes based environment as multiple Keycloak instances can be created/deleted with ease, however they all rely on a production ready database that can is performant and reliable. It should be periodically backed up and be available to be quickly restored in case of a disaster.
+
+The Azure Database for PostgreSQL flexible server can be backed up in multiple ways. The restore steps depend on the type of backup that is used to restore the database. The following backup options are supported  
+1. Automated daily backups as part of the Azure Database for PostgreSQL flexible server deployment (supports point in time restores only)
+2. Configurable periodic backups as part of a Backup Policy created in an Azure Backup Vault (supports point in time restores and backup on demand)
+3. On demand export/import of database using PostgreSQL tools pg_dump and pg_restore/psql. 
+
+In case of Automated daily backups, restoring a database involves restoring from a snapshot. This creates a new Azure Database for PostgreSQL flexible server and the Keycloak deployment is simply pointed to the new server or DNS can be used to point to the new server.
+
+In case of backups stored in an Azure Backup Vault, the restore process involves first restoring a specific backup from the Azure Backup Vault to an Azure Storage Account Container and then using PostgreSQL tools pg_restore/psql to restore the database.
+
+The database at any point in time can be backed up and restored using PostgreSQL tools pg_dump and pg_restore/psql.
 
 #### Scaling
 Depending on the load on the system different parts can be scaled. Check the following.
