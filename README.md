@@ -3,9 +3,14 @@
 ## Architecture
 
 ### Current state
+check subnets;
+check LB type;
+add ingress controller;
+public hosted zone
+
 ![Keycloak Architecture](/assets/Architecture.png)
 
-The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be deployed in a high availability setup.
+The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup.
 Access to Keycloak is facilitated via a load balancer.
 
 Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak.
@@ -13,7 +18,7 @@ Azure Database for PostgreSQL Flexible Server is used as external database for K
 ### Further architecture improvements
 
 >[!IMPORTANT]
->For a production grade setup at least the following aspects have to be considered and implemented form an infrastructure point of view:
+>For a production grade setup at least the following aspects have to be considered and implemented from an infrastructure point of view:
 * Do not use default virtual network and subnets.
 * Ensure traffic is private and use e.g. a bastion host to connect to the network.
 * Use Azure NAT Gateway for internet access (ipv4).
