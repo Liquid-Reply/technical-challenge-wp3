@@ -1,0 +1,23 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak-full-coral
+  namespace: keycloak-system
+spec:
+  instances: 3
+  db:
+    vendor: postgres
+    database: keycloak-db
+    host: # See paramaters.yml
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    tlsSecret: keycloak-tls
+  hostname:
+    hostname: host.keycloak.full-coral.cc
+  ingress:
+    enabled: false
