@@ -35,11 +35,13 @@
 
 The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup. In this case three instances of Keycloak are deployed across three nodes, sharing the same external database.
 
-Access to Keycloak is facilitated via a load balancer.
+Access to Keycloak is facilitated via a load balancer which is automatically provisioned from within AKS.
 
-Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak.
+Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak and access is facilitated with username/password for simplicity.
 
 Azure DNS is used to resolve hostnames.
+
+Azure Key Vault is used to store the DB admin password.
 
 ### Further architecture improvements
 
@@ -54,15 +56,18 @@ Azure DNS is used to resolve hostnames.
 * Ensure encryption at rest and encryption in transit. This includes managing encryption keys and certificates.
 * Use AKS system/agent node pool only for critical workload. Use dedicated user node pools for further workload. Node pools should be deployed to all availability zones.
 * Use e.g. Kubernetes RBAC with Azure RBAC integration to manage cluster access.
-* Automate the deployment of infrastructure and workload to ensure consistency (use e.g. GitOps approach).
+* Automate the deployment of infrastructure and workload to ensure consistency (use CI/CD pipelines and GitOps approach).
 * Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL Flexible Server.
+* Use managed identities to for authn/authz form Kubernetes workload to Azure services.
 * Consider deploying Azure Database for PostgreSQL Flexible Server in `ZoneRedundant` mode and add read replicas which can be promoted to primary instances in case of failures.
-* Consider using a web application firewall (either within Kubernetes or as part of the loadbalancer).
+* Consider using a web application firewall (either within Kubernetes or as part of the load balancer).
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute, storage and application resources.
 
 ## Deployment
 ### Infrastructure provisioning
 The infrastructure components are provisioned via Terraform with its state saved in Azure Blob Storage. To provision the initial infrastructure needed for the terraform backend one can run `sh ./infra/script/create-tf-backend.sh` from the root of the git repository. It is required to have Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and to be logged in (`az login`).
+
+Create a file called postgresql_password in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
 
 After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
@@ -73,6 +78,8 @@ Install helm; run script
 
 ### Keycloak installation
 TODO: describe helm deployment
+
+Access URL + PW
 
 ### Service integration
 TODO: describe how to enable a service to be used with keycloak
