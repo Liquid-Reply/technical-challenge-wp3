@@ -1,5 +1,32 @@
 # Implement Keycloak HA Setup with External DB
 
+* [Architecture](#architecture)
+  * [Current state](#current-state)
+  * [Further architecture improvements](#further-architecture-improvements)
+* [Deployment](#deployment)
+  * [Infrastructure provisioning](#infrastructure-provisioning)
+  * [Kubernetes initialization](#kubernetes-initialization)
+  * [Keycloak installation](#keycloak-installation)
+  * [Service integration](#service-integration)
+* [Operations](#operations)
+  * [Maintenance](#maintenance)
+    * [Connect to cluster](#connect-to-cluster)
+    * [Backup & Restore](#backup--restore)
+    * [Scaling](#scaling)
+    * [Change Keycloak configuration](#change-keycloak-configuration)
+    * [Update Keycloak version](#update-keycloak-version)
+  * [Troubleshooting](#troubleshooting)
+    * [Check application logs](#check-application-logs)
+    * [Check node health](#check-node-health)
+    * [Check pod health](#check-pod-health)
+    * [Check overall cluster health](#check-overall-cluster-health)
+    * [Check database health](#check-odatabase-health)
+  * [Monitoring](#monitoring)
+    * [Logs](#logs)
+    * [Metrics](#metrics)
+    * [Traces](#traces)
+    * [Alerting](#alerting)
+
 ## Architecture
 
 ### Current state
@@ -52,11 +79,13 @@ TODO: describe how to enable a service to be used with keycloak
 
 ## Operations
 
+The following sections include commands to be executed in the CLI. To ensure that these commands are successful please check the prerequisites:
+* Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled (which is the case for the current infrastrucutre setup) or e.g. a bastion host if the cluster is private (should be private for production). To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
+
+
 ### Maintenance
 
 #### Connect to cluster
-Prerequisites:
-* Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled or e.g. a bastion host if the cluster is private. To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
 
 To connect run the following commands (you can also find them in the Azure Portal via the "Connect" option in the overview tab of the respective Kubernetes cluster):
 1. Login on the cli: `az login` (use the flag `--tenant <tenant_id>` if you have access to multiple tenants)
@@ -108,19 +137,34 @@ Either the number of nodes or the instance type can be scaled in [/infra/main.tf
 Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_tier` parameters in [/infra/database.tf](./infra/database.tf).
 
 ##### Keycloak
-Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
 
 To increase the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
-#### Change configuration
-Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
+#### Change Keycloak configuration
 
-To change configuration parameters of Keycloak adjust the corresponding values in TODO: and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
+To change configuration parameters of Keycloak adjust the corresponding values in TODO: (Keycloak CRD) and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
 
 Helm
 
-#### Update version
-Prerequisite: Make sure Helm is installed (https://helm.sh/docs/intro/install/) and you have access to the cluster (see [here](#connect-to-cluster)).
+To check that the Keycloak instance has been provisioned in the cluster run:
+
+`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+
+The output for the successful deployment should look like this: 
+
+```sh
+CONDITION: Ready
+  STATUS: true
+  MESSAGE:
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+CONDITION: RollingUpdate
+  STATUS: false
+  MESSAGE:
+```
+
+#### Update Keycloak version
 
 TODO:
 
