@@ -23,6 +23,8 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+infra/azurek8s
+
 # Ignore transient lock info files created by terraform apply
 .terraform.tfstate.lock.info
 
@@ -38,3 +40,6 @@ terraform.rc
 
 # drawio
 **/*.drawio.*
+
+infra/files/postgresql_password
+infra/files/azure.json
