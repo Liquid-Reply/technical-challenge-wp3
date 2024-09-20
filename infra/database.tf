@@ -1,48 +1,36 @@
-resource "azurerm_key_vault_secret" "keycloak-postgres-secret" {
-  name         = "keycloak-postgres-secret"
-  value        = file("./files/postgresql_password")
-  key_vault_id = azurerm_key_vault.tech-challenge-keyvault.id
-}
-
-resource "random_pet" "postgresql_server_name_random_suffix" {
-}
-
 resource "azurerm_postgresql_flexible_server" "keycloak" {
-  resource_group_name = azurerm_resource_group.main.name
-  name = "keycloak-postgres-${random_pet.postgresql_server_name_random_suffix.id}"
-  location = local.location
-
-  version = "16"
-
+  name                          = module.naming.postgresql_server.name
+  resource_group_name           = azurerm_resource_group.keycloak.name
+  location                      = azurerm_resource_group.keycloak.location
+  version                       = "16"
   public_network_access_enabled = true
-
-  administrator_login = "psqladmin"
-  administrator_password = azurerm_key_vault_secret.keycloak-postgres-secret.value 
-
-  sku_name   = "GP_Standard_D2s_v3"
-  zone       = local.postgres_zone
-  
+  administrator_login           = "psqladmin"
+  administrator_password        = azurerm_key_vault_secret.keycloak_psqladmin_password.value
+  sku_name                      = "GP_Standard_D2s_v3"
+  zone                          = local.postgres_zone
   high_availability {
     mode = "ZoneRedundant"
-    standby_availability_zone = local.postgres_standby_availability_zone #to fix error `zone` can only be changed when exchanged with the zone specified in `high_availability.0.standby_availability_zone`
+    # to fix error `zone` can only be changed when exchanged with the zone specified in `high_availability.0.standby_availability_zone`
+    standby_availability_zone = local.postgres_standby_availability_zone
   }
-
   backup_retention_days        = local.postgres_backup_retention_days
   geo_redundant_backup_enabled = local.postgres_geo_redundant_backup_enabled
-
-  storage_mb = 32768
-  storage_tier = "P10"
+  storage_mb                   = 32768
+  storage_tier                 = "P10"
 }
 
-
-resource azurerm_postgresql_flexible_server_database "keycloak-db" {
-  name      = "keycloak-db"
+resource "azurerm_postgresql_flexible_server_database" "keycloak-db" {
+  name      = module.naming.postgresql_database.name
   server_id = azurerm_postgresql_flexible_server.keycloak.id
   collation = "en_US.utf8"
   charset   = "utf8"
+}
 
-  # prevent the possibility of accidental data loss
-  lifecycle {
-    prevent_destroy = true
-  }
+# Do not use in production
+# Use private endpoints and subnet intergration in production
+resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all_internet" {
+  name             = "alllow_all_internet"
+  server_id        = azurerm_postgresql_flexible_server.keycloak.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "255.255.255.255"
 }

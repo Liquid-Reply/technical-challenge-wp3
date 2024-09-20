@@ -7,7 +7,7 @@ spec:
   instances: 3
   db:
     vendor: postgres
-    database: keycloak-db
+    database: # See parameters.yml
     host: # See paramaters.yml
     usernameSecret:
       name: keycloak-db-secret

@@ -137,6 +137,23 @@ In case of Automated daily backups, restoring a database involves restoring from
 In case of backups stored in an Azure Backup Vault, the restore process involves first restoring a specific backup from the Azure Backup Vault to an Azure Storage Account Container and then using PostgreSQL tools pg_restore/psql to restore the database.
 
 The database at any point in time can be backed up and restored using PostgreSQL tools pg_dump and pg_restore/psql.
+```shell
+# To backup the contents of a database
+# -W - prompts for password input 
+# -U - server username (admin database username)
+# -d - database name 
+# -F, --format=c|d|t|p output file format (custom, directory, tar, plain text (default))
+
+pg_dump -W -h $DB_SERVER_HOSTNAME -U $DB_SERVER_USERNAME -Ft -d $DB_NAME > keycloak-db.tar
+
+# To restore the contents of a database
+# -W - prompts for password input 
+# -U - server username (admin database username)
+# -d - database name 
+# -F - --format=c|d|t backup file format (should be automatic)
+pg_restore -W -h $DB_SERVER_HOSTNAME -U $DB_SERVER_USERNAME -c -d $DB_NAME < keycloak-db.tar
+```
+
 
 #### Scaling
 Depending on the load on the system different parts can be scaled. Check the following.
