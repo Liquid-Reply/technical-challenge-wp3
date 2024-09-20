@@ -55,14 +55,6 @@ resource "random_pet" "azurerm_kubernetes_cluster_dns_prefix" {
   prefix = "dns"
 }
 
-# resource "azurerm_container_registry" "tech-challenge-acr" {
-#   name                = "tech-challenge-acr"
-#   resource_group_name = azurerm_resource_group.main.name
-#   location            = azurerm_resource_group.main.location
-#   sku                 = "Standard"
-#   admin_enabled       = true
-# }
-
 resource "azurerm_kubernetes_cluster" "k8s" {
   location            = azurerm_resource_group.main.location
   name                = random_pet.azurerm_kubernetes_cluster_name.id
@@ -77,7 +69,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   default_node_pool {
     name       = "agentpool"
     vm_size    = "Standard_D8s_v5"
-    node_count = 3
+    node_count = local.node_count
     zones      = local.zones
   }
   
@@ -95,11 +87,9 @@ resource "azurerm_kubernetes_cluster" "k8s" {
     network_policy      = "cilium"
     network_data_plane  = "cilium"
   }
+
+  oidc_issuer_enabled       = true
+  workload_identity_enabled = true
 }
 
-resource "azurerm_role_assignment" "acr_k8s_role_assignment" {
-  principal_id                     = azurerm_kubernetes_cluster.k8s.kubelet_identity[0].object_id
-  role_definition_name             = "AcrPull"
-  scope                            = azurerm_container_registry.tech-challenge-acr.id
-  skip_service_principal_aad_check = true
-}
+

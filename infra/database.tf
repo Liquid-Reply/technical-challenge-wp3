@@ -32,10 +32,6 @@ resource "azurerm_postgresql_flexible_server" "keycloak" {
 
   storage_mb = 32768
   storage_tier = "P10"
-
-  #TODO: encryption
-  #TODO: out own vnet/subnet?
-  #TODO: password in keyvault?
 }
 
 

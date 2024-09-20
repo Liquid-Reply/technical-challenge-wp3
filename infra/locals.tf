@@ -4,6 +4,7 @@ locals {
   
   location = "germanywestcentral"
   zones = ["1", "2", "3"]
+  node_count = 3
 
   admin_username = "adminuser"
   postgres_zone = "1"

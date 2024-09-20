@@ -40,3 +40,6 @@ terraform.rc
 
 # drawio
 **/*.drawio.*
+
+infra/files/postgresql_password
+infra/files/azure.json
