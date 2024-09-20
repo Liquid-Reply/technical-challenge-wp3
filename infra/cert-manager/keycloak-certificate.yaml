@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-certifacte
+spec:
+  secretName: keycloak-cert-manager
+  privateKey:
+    rotationPolicy: Always
+  commonName: www.host.keycloak.full-coral.cc
+  dnsNames:
+    - www.host.keycloak.full-coral.cc
+  usages:
+    - digital signature
+    - key encipherment
+    - server auth
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
