@@ -48,6 +48,7 @@ Azure Key Vault is used to store the DB admin password.
 >[!IMPORTANT]
 >For a production grade setup at least the following aspects have to be considered and implemented from an infrastructure point of view:
 
+* Have a production and development environment.
 * Do not use default virtual network and subnets.
 * Ensure traffic is private and use e.g. a bastion host to connect to the network.
 * Use Azure NAT Gateway for internet access (ipv4).
@@ -145,11 +146,11 @@ Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_
 
 ##### Keycloak
 
-To increase the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
+To adjust the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
 #### Change Keycloak configuration
 
-To change configuration parameters of Keycloak adjust the corresponding values in TODO: (Keycloak CRD) and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
+To change configuration parameters of Keycloak adjust the corresponding values in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml) and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
 
 Helm
 
@@ -173,11 +174,11 @@ CONDITION: RollingUpdate
 
 #### Update Keycloak version
 
-TODO:
+Keycloak is deployed via an operator. To upgrade to a new version check the releases in GitHub (<https://github.com/keycloak/keycloak/releases>) and read the corresponding official upgrade guide (<https://www.keycloak.org/docs/latest/upgrading/index.html>) to assess if configuration changes to Keycloak are required as well. The new Keycloak version can be specified in in the Kubernetes Keycloak manifests (especially the image tag in the `Deployment` resource). Make sure to also set the correct version in all labels/annotations to keep consistency and additionally update the Custom resource Definitions if required ([manifests/01_crds/](manifests/01_crds/)).
 
-Helm
+Version upgrades and configuration changes should be tested in a development environment before being rolled out to production. In case zero downtime deployments are not possible a maintenance window should be communicated.
 
-Lifecycle management, downtimes???
+After setting all required values roll out the changes via TODO:
 
 #### Add/remove users/realms etc
 TODO:
