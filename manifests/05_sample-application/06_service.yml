@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  ports:
+    - port: 443
+      name: https-grafana
+      protocol: TCP
+      targetPort: https-grafana
+  selector:
+    app: grafana
+  sessionAffinity: None
+  type: ClusterIP
