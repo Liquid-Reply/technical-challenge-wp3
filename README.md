@@ -43,6 +43,9 @@ Azure DNS is used to resolve hostnames.
 
 Azure Key Vault is used to store the DB admin password.
 
+TODO: backup vault
+TODO: storace accounts
+
 ### Further architecture improvements
 
 >[!IMPORTANT]
