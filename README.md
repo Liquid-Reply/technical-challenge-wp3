@@ -98,7 +98,7 @@ To install Keycloak run the following commands:
 
 To check that the Keycloak instance has been provisioned in the cluster run:
 
-`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+`kubectl get keycloaks/keycloak -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
 
 The output for the successful deployment should look like this: 
 
@@ -213,7 +213,7 @@ To change configuration parameters of Keycloak adjust the corresponding values i
 
 As for the Keycloak installation you can check that the Keycloak instance has been provisioned in the cluster by running:
 
-`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+`kubectl get keycloaks/keycloak -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
 
 The output for the successful deployment should look like this: 
 
@@ -258,7 +258,7 @@ After setting all required values roll out the changes as described in [Keycloak
 #### Check application logs
 You can directly access Keycloak application logs from Kubernetes. 
 
-To see all Keycloak logs: `kubectl logs sts/keycloak-full-coral -n keycloak-system`
+To see all Keycloak logs: `kubectl logs sts/keycloak -n keycloak-system`
 
 To see specific pod logs: `kubectl logs pod/<pod_name> -n <pod_namespace>`
 
@@ -279,10 +279,10 @@ You can use a bottom-up approach to identify issues along the network path.
 
 * Check if Keycloak Pods are healthy (see [here](#check-pod-health)) and fix potential issues
 * Check if Keycloak Service points to backend Pods:
-  * `kubectl describe svc keycloak-full-coral-service -n keycloak-system`
+  * `kubectl describe svc keycloak-service -n keycloak-system`
   * `Endpoints` should list the IPs and ports of the Keycloak Pods. If that is not the case then the Service is probably misconfigured (e.g. wrong selector or targetPorts).
 * Check if Keycloak Ingress points to Service:
-  * `kubectl describe ing keycloak-full-coral-ingress -n keycloak-system`
+  * `kubectl describe ing keycloak-ingress -n keycloak-system`
   * backend should point to the keycloak service
 * Check if ingress controller is up and running: Follow the steps to check pod health (see [here](#check-pod-health)) but use `ingress-nginx` instead of `keycloak-system`
 * If the previous steps didn't reveal issues you should check the load balancer in Azure, especially if the health probes are successful and if the kubernetes nodes are listed in the backend pool. Additionally you should also check if the DNS records are correctly configured.

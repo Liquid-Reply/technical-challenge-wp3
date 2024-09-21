@@ -8,7 +8,7 @@ metadata:
 spec:
   defaultBackend:
     service:
-      name: keycloak-full-coral-service
+      name: keycloak-service
       port:
         number: 8443
   ingressClassName: nginx
@@ -22,7 +22,7 @@ spec:
         paths:
           - backend:
               service:
-                name: keycloak-full-coral-service
+                name: keycloak-service
                 port:
                   number: 8443
             pathType: ImplementationSpecific
