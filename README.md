@@ -20,8 +20,9 @@
     * [Check application logs](#check-application-logs)
     * [Check node health](#check-node-health)
     * [Check pod health](#check-pod-health)
+    * [Check network path](#check-network-path)
     * [Check overall cluster health](#check-overall-cluster-health)
-    * [Check database health](#check-odatabase-health)
+    * [Check database health](#check-database-health)
   * [Monitoring](#monitoring)
     * [Logs](#logs)
     * [Metrics](#metrics)
@@ -294,7 +295,7 @@ You can use the output to search for errors.
 Use a monitoring system or the Azure Portal to check if the database used by Keycloak is healthy. Take a look at the server metrics (e.g. failed connections, alive status) and if the database used by Keycloak exists.
 
 ### Monitoring
-![Observability](./assets/observability.png)
+![Observability](./assets/Observability.png)
 
 A proper monitoring solution includes an observability tool that consumes different signals like logs, metrics and traces from the whole system landscape (infrastructure and applications). This data needs to be visualized to quickly understand it and an alerting system needs to established which notifies incident response tools and notifies teams. 
 
