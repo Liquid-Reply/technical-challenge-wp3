@@ -37,7 +37,7 @@
 
 The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup. In this case three instances of Keycloak are deployed across three nodes, sharing the same external database.
 
-Access to Keycloak is facilitated via an nginx ingress controller (running in AKS) with e2e https which is fronted by a load balancer.
+Access to Keycloak is facilitated via an nginx ingress controller (running in AKS) with e2e https which is fronted by a load balancer. Let's Encrypt is used for certificates.
 
 Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak and access is facilitated with username/password for simplicity.
 
@@ -75,7 +75,7 @@ The infrastructure components are provisioned via Terraform with its state saved
 
 Create a file called `postgresql_password` in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
 
-After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
+After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. You will be asked to provide a domain name which will be used to access Keycloak and the sample application. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
 ### Kubernetes initialization
 Before deploying workload to Kubernetes some parameters must be set. The file [parameters.yaml](parameters.yaml) lists these parameters and where they must be set.

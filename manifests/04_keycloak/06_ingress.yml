@@ -14,10 +14,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - host.keycloak.full-coral.cc
+        - # See parameters.yml
       secretName: keycloak-tls
   rules:
-    - host: host.keycloak.full-coral.cc
+    - host: # See parameters.yml
       http:
         paths:
           - backend:

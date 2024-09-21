@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: keycloak-tls
   dnsNames:
-    - 'host.keycloak.full-coral.cc'
+    - # See parameters.yml
   issuerRef:
     group: cert-manager.io
     kind: Issuer
