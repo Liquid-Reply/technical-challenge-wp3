@@ -1,5 +1,32 @@
 # Implement Keycloak HA Setup with External DB
 
+* [Architecture](#architecture)
+  * [Current state](#current-state)
+  * [Further architecture improvements](#further-architecture-improvements)
+* [Deployment](#deployment)
+  * [Infrastructure provisioning](#infrastructure-provisioning)
+  * [Kubernetes initialization](#kubernetes-initialization)
+  * [Keycloak installation](#keycloak-installation)
+  * [Service integration](#service-integration)
+* [Operations](#operations)
+  * [Maintenance](#maintenance)
+    * [Connect to cluster](#connect-to-cluster)
+    * [Backup & Restore](#backup--restore)
+    * [Scaling](#scaling)
+    * [Change Keycloak configuration](#change-keycloak-configuration)
+    * [Update Keycloak version](#update-keycloak-version)
+  * [Troubleshooting](#troubleshooting)
+    * [Check application logs](#check-application-logs)
+    * [Check node health](#check-node-health)
+    * [Check pod health](#check-pod-health)
+    * [Check overall cluster health](#check-overall-cluster-health)
+    * [Check database health](#check-odatabase-health)
+  * [Monitoring](#monitoring)
+    * [Logs](#logs)
+    * [Metrics](#metrics)
+    * [Traces](#traces)
+    * [Alerting](#alerting)
+
 ## Architecture
 
 ### Current state
@@ -8,17 +35,23 @@
 
 The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup. In this case three instances of Keycloak are deployed across three nodes, sharing the same external database.
 
-Access to Keycloak is facilitated via a load balancer.
+Access to Keycloak is facilitated via an nginx ingress controller (running in AKS) with e2e https which is fronted by a load balancer.
 
-Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak.
+Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak and access is facilitated with username/password for simplicity.
 
 Azure DNS is used to resolve hostnames.
+
+Azure Key Vault is used to store the DB admin password.
+
+TODO: backup vault
+TODO: storace accounts
 
 ### Further architecture improvements
 
 >[!IMPORTANT]
 >For a production grade setup at least the following aspects have to be considered and implemented from an infrastructure point of view:
 
+* Have a production and development environment.
 * Do not use default virtual network and subnets.
 * Ensure traffic is private and use e.g. a bastion host to connect to the network.
 * Use Azure NAT Gateway for internet access (ipv4).
@@ -27,15 +60,18 @@ Azure DNS is used to resolve hostnames.
 * Ensure encryption at rest and encryption in transit. This includes managing encryption keys and certificates.
 * Use AKS system/agent node pool only for critical workload. Use dedicated user node pools for further workload. Node pools should be deployed to all availability zones.
 * Use e.g. Kubernetes RBAC with Azure RBAC integration to manage cluster access.
-* Automate the deployment of infrastructure and workload to ensure consistency (use e.g. GitOps approach).
+* Automate the deployment of infrastructure and workload to ensure consistency (use CI/CD pipelines and GitOps approach).
 * Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL Flexible Server.
+* Use managed identities to for authn/authz form Kubernetes workload to Azure services.
 * Consider deploying Azure Database for PostgreSQL Flexible Server in `ZoneRedundant` mode and add read replicas which can be promoted to primary instances in case of failures.
-* Consider using a web application firewall (either within Kubernetes or as part of the loadbalancer).
+* Consider using a web application firewall.
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute, storage and application resources.
 
 ## Deployment
 ### Infrastructure provisioning
 The infrastructure components are provisioned via Terraform with its state saved in Azure Blob Storage. To provision the initial infrastructure needed for the terraform backend one can run `sh ./infra/script/create-tf-backend.sh` from the root of the git repository. It is required to have Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and to be logged in (`az login`).
+
+Create a file called postgresql_password in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
 
 After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
@@ -47,16 +83,20 @@ Install helm; run script
 ### Keycloak installation
 TODO: describe helm deployment
 
+Access URL + PW
+
 ### Service integration
 TODO: describe how to enable a service to be used with keycloak
 
 ## Operations
 
+The following sections include commands to be executed in the CLI. To ensure that these commands are successful please check the prerequisites:
+* Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled (which is the case for the current infrastrucutre setup) or e.g. a bastion host if the cluster is private (should be private for production). To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
+
+
 ### Maintenance
 
 #### Connect to cluster
-Prerequisites:
-* Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled or e.g. a bastion host if the cluster is private. To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
 
 To connect run the following commands (you can also find them in the Azure Portal via the "Connect" option in the overview tab of the respective Kubernetes cluster):
 1. Login on the cli: `az login` (use the flag `--tenant <tenant_id>` if you have access to multiple tenants)
@@ -108,19 +148,40 @@ Either the number of nodes or the instance type can be scaled in [/infra/main.tf
 Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_tier` parameters in [/infra/database.tf](./infra/database.tf).
 
 ##### Keycloak
-To increase the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
-#### Change configuration
-To change configuration parameters of Keycloak adjust the corresponding values in TODO: and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
+To adjust the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
 
-Helm
+#### Change Keycloak configuration
 
-#### Update version
-TODO:
+To change configuration parameters of Keycloak adjust the corresponding values in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml) and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
 
 Helm
 
-Lifecycle management, downtimes
+To check that the Keycloak instance has been provisioned in the cluster run:
+
+`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+
+The output for the successful deployment should look like this: 
+
+```sh
+CONDITION: Ready
+  STATUS: true
+  MESSAGE:
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+CONDITION: RollingUpdate
+  STATUS: false
+  MESSAGE:
+```
+
+#### Update Keycloak version
+
+Keycloak is deployed via an operator. To upgrade to a new version check the releases in GitHub (<https://github.com/keycloak/keycloak/releases>) and read the corresponding official upgrade guide (<https://www.keycloak.org/docs/latest/upgrading/index.html>) to assess if configuration changes to Keycloak are required as well. The new Keycloak version can be specified in in the Kubernetes Keycloak manifests (especially the image tag in the `Deployment` resource). Make sure to also set the correct version in all labels/annotations to keep consistency and additionally update the Custom resource Definitions if required ([manifests/01_crds/](manifests/01_crds/)).
+
+Version upgrades and configuration changes should be tested in a development environment before being rolled out to production. In case zero downtime deployments are not possible a maintenance window should be communicated.
+
+After setting all required values roll out the changes via TODO:
 
 #### Add/remove users/realms etc
 TODO:
