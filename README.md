@@ -64,7 +64,7 @@ TODO: storace accounts
 * Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL Flexible Server.
 * Use managed identities to for authn/authz form Kubernetes workload to Azure services.
 * Consider deploying Azure Database for PostgreSQL Flexible Server in `ZoneRedundant` mode and add read replicas which can be promoted to primary instances in case of failures.
-* Consider using a web application firewall (either within Kubernetes or as part of the load balancer).
+* Consider using a web application firewall 
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute, storage and application resources.
 
 ## Deployment
