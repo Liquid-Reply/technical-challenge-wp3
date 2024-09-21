@@ -114,13 +114,15 @@ CONDITION: RollingUpdate
   MESSAGE:
 ```
 
-TODO: parameters.yaml
+After successful installation Keycloak is available via [https://host.keycloak.<your_domain>/](https://host.keycloak.<your_domain>/).
 
 ### Service integration
 We are using Grafana as sample application to test the Keycloak integration. The integration of Keycloak in a tool depends on the configuration parameters the tool offers. In case of Grafana it is possible to integrate Keycloak via the `GF_AUTH_GENERIC_OAUTH_*` environment variables which can be set e.g. in the [Deployment resource](./manifests/05_sample-application/05_deployment.yml).
 The values of `GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` are provided via Kubernetes Secrets which are populated with values obtained from Keycloak when creating a client in a realm.
 
-To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`
+To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`.
+
+After successful rollout Grafana will be available via [https://grafana.keycloak.<your_domain>](https://grafana.keycloak.<your_domain>) and you can use OAuth login for users defined in Keycloak.
 
 ## Operations
 
