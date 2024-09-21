@@ -6,7 +6,8 @@
 * [Deployment](#deployment)
   * [Infrastructure provisioning](#infrastructure-provisioning)
   * [Kubernetes initialization](#kubernetes-initialization)
-  * [Keycloak installation](#keycloak-installation)
+    * [Utility services](#utility-services)
+    * [Keycloak installation](#keycloak-installation)
   * [Service integration](#service-integration)
 * [Operations](#operations)
   * [Maintenance](#maintenance)
@@ -19,8 +20,9 @@
     * [Check application logs](#check-application-logs)
     * [Check node health](#check-node-health)
     * [Check pod health](#check-pod-health)
+    * [Check network path](#check-network-path)
     * [Check overall cluster health](#check-overall-cluster-health)
-    * [Check database health](#check-odatabase-health)
+    * [Check database health](#check-database-health)
   * [Monitoring](#monitoring)
     * [Logs](#logs)
     * [Metrics](#metrics)
@@ -39,12 +41,12 @@ Access to Keycloak is facilitated via an nginx ingress controller (running in AK
 
 Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak and access is facilitated with username/password for simplicity.
 
+Azure Backup Vault is used for periodic backups of the database.
+
 Azure DNS is used to resolve hostnames.
 
 Azure Key Vault is used to store the DB admin password.
 
-TODO: backup vault
-TODO: storace accounts
 
 ### Further architecture improvements
 
@@ -69,30 +71,61 @@ TODO: storace accounts
 
 ## Deployment
 ### Infrastructure provisioning
-The infrastructure components are provisioned via Terraform with its state saved in Azure Blob Storage. To provision the initial infrastructure needed for the terraform backend one can run `sh ./infra/script/create-tf-backend.sh` from the root of the git repository. It is required to have Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and to be logged in (`az login`).
+The infrastructure components are provisioned via Terraform with its state saved in Azure Blob Storage. To provision the initial infrastructure needed for the terraform backend one can run `sh create-tf-backend.sh` from the root of the git repository. It is required to have Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) installed and to be logged in (`az login`).
 
-Create a file called postgresql_password in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
+Create a file called `postgresql_password` in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
 
 After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
-TODO: keyvault + DB password
-
 ### Kubernetes initialization
-Install helm; run script
+Before deploying workload to Kubernetes some parameters must be set. The file [parameters.yaml](parameters.yaml) lists these parameters and where they must be set.
+After properly setting all parameters and after AKS is provisioned by Terraform make sure you can connect to the cluster as described in the [Operations](operations) section and deploy utility services and Keycloak as lined out below.
 
-### Keycloak installation
-TODO: describe helm deployment
+>[!NOTE]
+>
+>In a more mature setup a GitOps tool would be provisioned which would then deploy and manage all required Kubernetes workloads.
 
-Access URL + PW
+#### Utility services
+To deploy run the following commands:
+1. `kubectl apply -R -f manifests/02_ingress-nginx/` (this deploys the nginx ingress controller)
+1. `kubectl apply -R -f manifests/03_cert-manager/` (this deploys cert-manager to issue certificates)
+
+#### Keycloak installation
+To install Keycloak run the following commands:
+
+1. `kubectl apply -R -f manifests/01_crds/` (this deploys required custom resource definitions for Keycloak)
+1. `kubectl apply -R -f manifests/04_keycloak/` (this deploys Keycloak)
+
+To check that the Keycloak instance has been provisioned in the cluster run:
+
+`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+
+The output for the successful deployment should look like this: 
+
+```sh
+CONDITION: Ready
+  STATUS: true
+  MESSAGE:
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+CONDITION: RollingUpdate
+  STATUS: false
+  MESSAGE:
+```
+
+TODO: parameters.yaml
 
 ### Service integration
-TODO: describe how to enable a service to be used with keycloak
+We are using Grafana as sample application to test the Keycloak integration. The integration of Keycloak in a tool depends on the configuration parameters the tool offers. In case of Grafana it is possible to integrate Keycloak via the `GF_AUTH_GENERIC_OAUTH_*` environment variables which can be set e.g. in the [Deployment resource](./manifests/05_sample-application/05_deployment.yml).
+The values of `GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` are provided via Kubernetes Secrets which are populated with values obtained from Keycloak when creating a client in a realm.
+
+To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`
 
 ## Operations
 
 The following sections include commands to be executed in the CLI. To ensure that these commands are successful please check the prerequisites:
 * Azure CLI (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli), kubectl (https://kubernetes.io/docs/tasks/tools/) and kubelogin (https://azure.github.io/kubelogin/install.html) are installed (https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) on the machine that has access to the cluster. This can be a local machine if cluster has public access enabled (which is the case for the current infrastrucutre setup) or e.g. a bastion host if the cluster is private (should be private for production). To connect to the bastion host you can use the Azure portal (https://portal.azure.com/) to identify the VM and check the connection possibilities.
-
 
 ### Maintenance
 
@@ -137,6 +170,23 @@ In case of Automated daily backups, restoring a database involves restoring from
 In case of backups stored in an Azure Backup Vault, the restore process involves first restoring a specific backup from the Azure Backup Vault to an Azure Storage Account Container and then using PostgreSQL tools pg_restore/psql to restore the database.
 
 The database at any point in time can be backed up and restored using PostgreSQL tools pg_dump and pg_restore/psql.
+```shell
+# To backup the contents of a database
+# -W - prompts for password input 
+# -U - server username (admin database username)
+# -d - database name 
+# -F, --format=c|d|t|p output file format (custom, directory, tar, plain text (default))
+
+pg_dump -W -h $DB_SERVER_HOSTNAME -U $DB_SERVER_USERNAME -Ft -d $DB_NAME > keycloak-db.tar
+
+# To restore the contents of a database
+# -W - prompts for password input 
+# -U - server username (admin database username)
+# -d - database name 
+# -F - --format=c|d|t backup file format (should be automatic)
+pg_restore -W -h $DB_SERVER_HOSTNAME -U $DB_SERVER_USERNAME -c -d $DB_NAME < keycloak-db.tar
+```
+
 
 #### Scaling
 Depending on the load on the system different parts can be scaled. Check the following.
@@ -149,15 +199,19 @@ Database settings can be adjusted via the `sku_name`, `storage_mb` and `storage_
 
 ##### Keycloak
 
-To adjust the number of Keycloak instances adjust the `replicas` factor in TODO:. The available resources (cpu/memory) can also be adjusted there. After that make sure to rollout the changes via TODO:. (Note: In a mature setup the horizontal and vertical scaling can be automated in Kubernetes. For automatic rollouts a GitOps tool would be used.)
+Scaling Keycloak is equivalent to adjusting the `spec.instances` configuration parameter in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml). To rollout configuration changes see [Change Keycloak configuration](#change-keycloak-configuration).
 
 #### Change Keycloak configuration
 
-To change configuration parameters of Keycloak adjust the corresponding values in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml) and rollout the changes via TODO:. (Note: In a mature setup the rollouts would be automated via a GitOps tool.)
+>[!NOTE]
+>
+>Configuration changes should first be tested in a development environment before being rolled out to production to avoid unwanted downtime.
 
-Helm
+To change configuration parameters of Keycloak adjust the corresponding values in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml) and rollout the changes via:
 
-To check that the Keycloak instance has been provisioned in the cluster run:
+`kubectl apply -f manifests/04_keycloak/07_keycloak.yml`
+
+As for the Keycloak installation you can check that the Keycloak instance has been provisioned in the cluster by running:
 
 `kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
 
@@ -175,18 +229,24 @@ CONDITION: RollingUpdate
   MESSAGE:
 ```
 
+If configuration changes are performed during a maintenance window Keycloak can also first be scaled down to zero (equivalent of stopping Keycloak) with: 
+
+```shell
+# Stop the Keycloak instances
+kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":0}]'
+
+# Perform maintenance tasks
+```
+
+Running `kubectl apply -f manifests/04_keycloak/07_keycloak.yml` as mentioned above will scale up the instances again (equivalent of starting Keycloak again).
+
 #### Update Keycloak version
 
-Keycloak is deployed via an operator. To upgrade to a new version check the releases in GitHub (<https://github.com/keycloak/keycloak/releases>) and read the corresponding official upgrade guide (<https://www.keycloak.org/docs/latest/upgrading/index.html>) to assess if configuration changes to Keycloak are required as well. The new Keycloak version can be specified in in the Kubernetes Keycloak manifests (especially the image tag in the `Deployment` resource). Make sure to also set the correct version in all labels/annotations to keep consistency and additionally update the Custom resource Definitions if required ([manifests/01_crds/](manifests/01_crds/)).
+Keycloak is deployed via an operator. To upgrade to a new version check the releases in GitHub (<https://github.com/keycloak/keycloak/releases>) and read the corresponding official upgrade guide (<https://www.keycloak.org/docs/latest/upgrading/index.html>) to assess if configuration changes to Keycloak are required as well. The new Keycloak version can be specified in the Kubernetes Keycloak manifests in [manifests/04_keycloak](manifests/04_keycloak) (especially the image tag in the `Deployment` resource). Make sure to also set the correct version in all labels/annotations to keep consistency and additionally update the Custom resource Definitions if required ([manifests/01_crds/](manifests/01_crds/)).
 
 Version upgrades and configuration changes should be tested in a development environment before being rolled out to production. In case zero downtime deployments are not possible a maintenance window should be communicated.
 
-After setting all required values roll out the changes via TODO:
-
-#### Add/remove users/realms etc
-TODO:
-
-Not sure if we need this but either via direct UI import or via API calls (could be automated with custom script and TF). 
+After setting all required values roll out the changes as described in [Keycloak installation](#keycloak-installation).
 
 ### Troubleshooting
 >[!NOTE]
@@ -238,7 +298,7 @@ You can use the output to search for errors.
 Use a monitoring system or the Azure Portal to check if the database used by Keycloak is healthy. Take a look at the server metrics (e.g. failed connections, alive status) and if the database used by Keycloak exists.
 
 ### Monitoring
-![Observability](./assets/observability.png)
+![Observability](./assets/Observability.png)
 
 A proper monitoring solution includes an observability tool that consumes different signals like logs, metrics and traces from the whole system landscape (infrastructure and applications). This data needs to be visualized to quickly understand it and an alerting system needs to established which notifies incident response tools and notifies teams. 
 

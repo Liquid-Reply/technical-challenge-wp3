@@ -1,0 +1,13 @@
+# This file is just added for convenience so it is clear which parameters must be set before Kubernetes manifests can be rolled out 
+
+# manifests/04_keycloak/05_secret.yml
+password: <db_access_password> # define as base64 encoded
+username: <db_access_username> # define as base64 encoded
+---
+# manifests/04_keycloak/07_keycloak.yml
+database: <database_name> # as defined in Terraform resource azurerm_postgresql_flexible_server_database.keycloak-db
+host: <database_endpoint> # available from Terraform output database_endpoint
+---
+# manifests/05_sample-application/02_secret.yml
+client-id: <get_from_client_registration_in_keycloak> # define as base64 encoded
+client-secret: <get_from_client_registration_in_keycloak> # define as base64 encoded

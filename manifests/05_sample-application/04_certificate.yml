@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  secretName: grafana-tls
+  dnsNames:
+    - 'grafana.keycloak.full-coral.cc'
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: grafana-issuer

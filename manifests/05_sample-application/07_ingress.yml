@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+  name: grafana-ingress
+  namespace: grafana
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - grafana.keycloak.full-coral.cc
+      secretName: grafana-tls
+  rules:
+    - host: grafana.keycloak.full-coral.cc
+      http:
+        paths:
+          - backend:
+              service:
+                name: grafana
+                port:
+                  number: 443
+            pathType: ImplementationSpecific
