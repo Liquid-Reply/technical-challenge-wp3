@@ -8,7 +8,7 @@ spec:
   db:
     vendor: postgres
     database: # See parameters.yml
-    host: # See paramaters.yml
+    host: # See parameters.yml
     usernameSecret:
       name: keycloak-db-secret
       key: username

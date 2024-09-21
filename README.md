@@ -78,7 +78,8 @@ Create a file called `postgresql_password` in `/infra/files/` and add a password
 After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
 ### Kubernetes initialization
-After AKS is provisioned by Terraform make sure you can connect to the cluster as described in the [Operations](operations) section and and deploy utility services and Keycloak as described below.
+Before deploying workload to Kubernetes some parameters must be set. The file [parameters.yaml](parameters.yaml) lists these parameters and where they must be set.
+After properly setting all parameters and after AKS is provisioned by Terraform make sure you can connect to the cluster as described in the [Operations](operations) section and deploy utility services and Keycloak as lined out below.
 
 >[!NOTE]
 >
@@ -118,6 +119,8 @@ TODO: parameters.yaml
 ### Service integration
 We are using Grafana as sample application to test the Keycloak integration. The integration of Keycloak in a tool depends on the configuration parameters the tool offers. In case of Grafana it is possible to integrate Keycloak via the `GF_AUTH_GENERIC_OAUTH_*` environment variables which can be set e.g. in the [Deployment resource](./manifests/05_sample-application/05_deployment.yml).
 The values of `GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` are provided via Kubernetes Secrets which are populated with values obtained from Keycloak when creating a client in a realm.
+
+To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`
 
 ## Operations
 
