@@ -29,7 +29,7 @@ resource "azurerm_postgresql_flexible_server_database" "keycloak-db" {
 # Do not use in production
 # Use private endpoints and subnet intergration in production
 resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_all_internet" {
-  name             = "alllow_all_internet"
+  name             = "AllowAllInternet"
   server_id        = azurerm_postgresql_flexible_server.keycloak.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "255.255.255.255"
