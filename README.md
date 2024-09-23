@@ -66,6 +66,7 @@ Azure Key Vault is used to store the DB admin password.
 * Use Azure Private Link or VNet Integration to facilitate private access between AKS and Azure Database for PostgreSQL Flexible Server.
 * Use managed identities to for authn/authz form Kubernetes workload to Azure services.
 * Consider deploying Azure Database for PostgreSQL Flexible Server in `ZoneRedundant` mode and add read replicas which can be promoted to primary instances in case of failures.
+* Consider deploying Keycloak in a multi-site setup depending on the criticality (see [https://www.keycloak.org/high-availability/introduction](https://www.keycloak.org/high-availability/introduction)).
 * Consider using a web application firewall.
 * Consider FinOps best practices to ensure reasonable cloud spending. This includes aspects like rightsizing and autoscaling of e.g. compute, storage and application resources.
 
@@ -95,6 +96,8 @@ To install Keycloak run the following commands:
 
 1. `kubectl apply -R -f manifests/01_crds/` (this deploys required custom resource definitions for Keycloak)
 1. `kubectl apply -R -f manifests/04_keycloak/` (this deploys Keycloak)
+
+This will deploy Keycloak with three instances in a HA setup (see `spec.instances` in [/manifests/04_keycloak/07_keycloak.yml](/manifests/04_keycloak/07_keycloak.yml)).
 
 To check that the Keycloak instance has been provisioned in the cluster run:
 
