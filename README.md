@@ -1,5 +1,6 @@
 # Implement Keycloak HA Setup with External DB
 
+* [Repository](#repository)
 * [Architecture](#architecture)
   * [Current state](#current-state)
   * [Further architecture improvements](#further-architecture-improvements)
@@ -28,6 +29,9 @@
     * [Metrics](#metrics)
     * [Traces](#traces)
     * [Alerting](#alerting)
+
+## Repository
+All code including this documentation is stored in a public git repository: <https://github.com/Liquid-Reply/technical-challenge-wp3>
 
 ## Architecture
 
