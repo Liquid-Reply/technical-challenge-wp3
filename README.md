@@ -142,21 +142,7 @@ To connect run the following commands (you can also find them in the Azure Porta
 
 #### Backup & Restore
 **Kubernetes resources**  
-All kubernetes manifests are stored in Git and deployed in a GitOps manner using **INSERT CICD TOOL HERE** and are automatically reconciled when there is a drift. This automatic reconciliation has to be disable before any maintenance task is performed to prevent data loss or data corruption.
-
-**TODO: Add part about disabling reconciliation loop on CICD tool**
-
-Keycloak can be scaled up/down (equivalent of starting/stopping keycloak) using kubectl as follows
-
-```shell
-# Stop the Keycloak instances
-kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":0}]'
-
-# Perform maintenance tasks
-
-# Start the Keycloak instances
-kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":3}]'
-```
+All Kubernetes manifests are stored in Git. The commit history is the backup which can be used to restore certain manifest version which can then be deployed. 
 
 **Azure resources**
 
@@ -212,6 +198,8 @@ Scaling Keycloak is equivalent to adjusting the `spec.instances` configuration p
 To change configuration parameters of Keycloak adjust the corresponding values in [manifests/04_keycloak/07_keycloak.yml](manifests/04_keycloak/07_keycloak.yml) and rollout the changes via:
 
 `kubectl apply -f manifests/04_keycloak/07_keycloak.yml`
+
+(to check available parameters see <https://www.keycloak.org/operator/advanced-configuration> & <https://www.keycloak.org/server/all-config>)
 
 As for the Keycloak installation you can check that the Keycloak instance has been provisioned in the cluster by running:
 
