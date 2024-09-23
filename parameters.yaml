@@ -1,13 +1,35 @@
 # This file is just added for convenience so it is clear which parameters must be set before Kubernetes manifests can be rolled out 
 
+# manifests/04_keycloak/04_certificate.yml
+dnsNames: 'host.keycloak.<domain_name>' # use same domain name as used in Terraform
+---
 # manifests/04_keycloak/05_secret.yml
 password: <db_access_password> # define as base64 encoded
 username: <db_access_username> # define as base64 encoded
 ---
+# manifests/04_keycloak/06_ingress.yml
+tls.hosts: 'host.keycloak.<domain_name>' # use same domain name as used in Terraform
+tls.rules.host: 'host.keycloak.<domain_name>' # use same domain name as used in Terraform
+---
 # manifests/04_keycloak/07_keycloak.yml
 database: <database_name> # as defined in Terraform resource azurerm_postgresql_flexible_server_database.keycloak-db
 host: <database_endpoint> # available from Terraform output database_endpoint
+hostname: host.keycloak.<domain_name> # use same domain name as used in Terraform
 ---
 # manifests/05_sample-application/02_secret.yml
 client-id: <get_from_client_registration_in_keycloak> # define as base64 encoded
 client-secret: <get_from_client_registration_in_keycloak> # define as base64 encoded
+---
+# manifests/05_sample-application/04_certificate.yml
+dnsNames: 'grafana.keycloak.<domain_name>' # use same domain name as used in Terraform
+---
+# manifests/05_sample-application/05_deployment.yml
+env.GF_SERVER_DOMAIN.value: grafana.keycloak.<domain_name> # use same domain name as used in Terraform
+env.GF_SERVER_ROOT_URL.value:  https://grafana.keycloak.<domain_name> # use same domain name as used in Terraform
+env.GF_AUTH_GENERIC_OAUTH_AUTH_URL.value:  https://host.keycloak.<domain_name>/realms/master/protocol/openid-connect/auth # use same domain name as used in Terraform
+env.GF_AUTH_GENERIC_OAUTH_TOKEN_URL.value:  https://host.keycloak.<domain_name>/realms/master/protocol/openid-connect/token # use same domain name as used in Terraform
+env.GF_AUTH_GENERIC_OAUTH_API_URL.value:  https://host.keycloak.<domain_name>/realms/master/protocol/openid-connect/userinfo # use same domain name as used in Terraform
+---
+# manifests/05_sample-application/07_ingress.yml
+tls.hosts: grafana.keycloak.<domain_name>.cc # use same domain name as used in Terraform
+tls.rules.host: grafana.keycloak.<domain_name>.cc # use same domain name as used in Terraform

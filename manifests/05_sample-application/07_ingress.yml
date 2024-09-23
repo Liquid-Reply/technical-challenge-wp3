@@ -9,10 +9,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - grafana.keycloak.full-coral.cc
+        - # See parameters.yml
       secretName: grafana-tls
   rules:
-    - host: grafana.keycloak.full-coral.cc
+    - host: # See parameters.yml
       http:
         paths:
           - backend:

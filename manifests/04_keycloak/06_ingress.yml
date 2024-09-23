@@ -8,21 +8,21 @@ metadata:
 spec:
   defaultBackend:
     service:
-      name: keycloak-full-coral-service
+      name: keycloak-service
       port:
         number: 8443
   ingressClassName: nginx
   tls:
     - hosts:
-        - host.keycloak.full-coral.cc
+        - # See parameters.yml
       secretName: keycloak-tls
   rules:
-    - host: host.keycloak.full-coral.cc
+    - host: # See parameters.yml
       http:
         paths:
           - backend:
               service:
-                name: keycloak-full-coral-service
+                name: keycloak-service
                 port:
                   number: 8443
             pathType: ImplementationSpecific

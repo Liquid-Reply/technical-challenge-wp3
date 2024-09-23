@@ -37,7 +37,7 @@
 
 The architecture is based on Azure Kubernetes Service (AKS) where the compute nodes are spread across availability zones. This allows Keycloak to be easily deployed in a high availability setup. In this case three instances of Keycloak are deployed across three nodes, sharing the same external database.
 
-Access to Keycloak is facilitated via an nginx ingress controller (running in AKS) with e2e https which is fronted by a load balancer.
+Access to Keycloak is facilitated via an nginx ingress controller (running in AKS) with e2e https which is fronted by a load balancer. Let's Encrypt is used for certificates.
 
 Azure Database for PostgreSQL Flexible Server is used as external database for Keycloak and access is facilitated with username/password for simplicity.
 
@@ -75,7 +75,7 @@ The infrastructure components are provisioned via Terraform with its state saved
 
 Create a file called `postgresql_password` in `/infra/files/` and add a password. This will be written to Azure Key vault and used for the database deployment.
 
-After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
+After that use `terraform init` to initialize your local environment. With `terraform plan` and `terraform apply` you can check which resources will be deployed and execute the deployment. You will be asked to provide a domain name which will be used to access Keycloak and the sample application. After all resources are successfully deployed you can continue with [initializing Kubernetes](#kubernetes-initialization).
 
 ### Kubernetes initialization
 Before deploying workload to Kubernetes some parameters must be set. The file [parameters.yaml](parameters.yaml) lists these parameters and where they must be set.
@@ -98,7 +98,7 @@ To install Keycloak run the following commands:
 
 To check that the Keycloak instance has been provisioned in the cluster run:
 
-`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+`kubectl get keycloaks/keycloak -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
 
 The output for the successful deployment should look like this: 
 
@@ -114,13 +114,15 @@ CONDITION: RollingUpdate
   MESSAGE:
 ```
 
-TODO: parameters.yaml
+After successful installation Keycloak is available via [https://host.keycloak.<your_domain>/](https://host.keycloak.<your_domain>/).
 
 ### Service integration
 We are using Grafana as sample application to test the Keycloak integration. The integration of Keycloak in a tool depends on the configuration parameters the tool offers. In case of Grafana it is possible to integrate Keycloak via the `GF_AUTH_GENERIC_OAUTH_*` environment variables which can be set e.g. in the [Deployment resource](./manifests/05_sample-application/05_deployment.yml).
 The values of `GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` are provided via Kubernetes Secrets which are populated with values obtained from Keycloak when creating a client in a realm.
 
-To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`
+To rollout the sample application run `kubectl apply -R -f manifests/05_sample-application/`.
+
+After successful rollout Grafana will be available via [https://grafana.keycloak.<your_domain>](https://grafana.keycloak.<your_domain>) and you can use OAuth login for users defined in Keycloak.
 
 ## Operations
 
@@ -140,21 +142,7 @@ To connect run the following commands (you can also find them in the Azure Porta
 
 #### Backup & Restore
 **Kubernetes resources**  
-All kubernetes manifests are stored in Git and deployed in a GitOps manner using **INSERT CICD TOOL HERE** and are automatically reconciled when there is a drift. This automatic reconciliation has to be disable before any maintenance task is performed to prevent data loss or data corruption.
-
-**TODO: Add part about disabling reconciliation loop on CICD tool**
-
-Keycloak can be scaled up/down (equivalent of starting/stopping keycloak) using kubectl as follows
-
-```shell
-# Stop the Keycloak instances
-kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":0}]'
-
-# Perform maintenance tasks
-
-# Start the Keycloak instances
-kubectl --namespace keycloak-system patch keycloak keycloak  --type=json --patch='[{"op":"replace","path":"/spec/instances","value":3}]'
-```
+All Kubernetes manifests are stored in Git. The commit history is the backup which can be used to restore certain manifest version which can then be deployed. 
 
 **Azure resources**
 
@@ -211,9 +199,11 @@ To change configuration parameters of Keycloak adjust the corresponding values i
 
 `kubectl apply -f manifests/04_keycloak/07_keycloak.yml`
 
+(to check available parameters see <https://www.keycloak.org/operator/advanced-configuration> & <https://www.keycloak.org/server/all-config>)
+
 As for the Keycloak installation you can check that the Keycloak instance has been provisioned in the cluster by running:
 
-`kubectl get keycloaks/keycloak-full-coral -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
+`kubectl get keycloaks/keycloak -n keycloak-system -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'`
 
 The output for the successful deployment should look like this: 
 
@@ -258,7 +248,7 @@ After setting all required values roll out the changes as described in [Keycloak
 #### Check application logs
 You can directly access Keycloak application logs from Kubernetes. 
 
-To see all Keycloak logs: `kubectl logs sts/keycloak-full-coral -n keycloak-system`
+To see all Keycloak logs: `kubectl logs sts/keycloak -n keycloak-system`
 
 To see specific pod logs: `kubectl logs pod/<pod_name> -n <pod_namespace>`
 
@@ -279,10 +269,10 @@ You can use a bottom-up approach to identify issues along the network path.
 
 * Check if Keycloak Pods are healthy (see [here](#check-pod-health)) and fix potential issues
 * Check if Keycloak Service points to backend Pods:
-  * `kubectl describe svc keycloak-full-coral-service -n keycloak-system`
+  * `kubectl describe svc keycloak-service -n keycloak-system`
   * `Endpoints` should list the IPs and ports of the Keycloak Pods. If that is not the case then the Service is probably misconfigured (e.g. wrong selector or targetPorts).
 * Check if Keycloak Ingress points to Service:
-  * `kubectl describe ing keycloak-full-coral-ingress -n keycloak-system`
+  * `kubectl describe ing keycloak-ingress -n keycloak-system`
   * backend should point to the keycloak service
 * Check if ingress controller is up and running: Follow the steps to check pod health (see [here](#check-pod-health)) but use `ingress-nginx` instead of `keycloak-system`
 * If the previous steps didn't reveal issues you should check the load balancer in Azure, especially if the health probes are successful and if the kubernetes nodes are listed in the backend pool. Additionally you should also check if the DNS records are correctly configured.
